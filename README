@@ -7,6 +7,13 @@ A simple class to generate XML without fuss. Born out of frustration
 of entering XML data directly to C++ strings.
 
 
+requirements
+------------
+
+C++ compiler and STL (sxml uses string, map, vector and stringstream
+for formatting some values).
+
+
 usage
 -----
 
