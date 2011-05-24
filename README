@@ -7,5 +7,16 @@ A simple class to generate XML without fuss. Born out of frustration
 of entering XML data directly to C++ strings.
 
 
+usage
+-----
+
+sxml is intended to be included directly in your source code tree.
+As it consists of only one source file and one header file, that
+shouldn't be impossible.
+
+See the example.cpp file for simple usage, you should get the hang
+of it pretty soon.
+
+
 Copyright (C) 2011 Oskari Timperi
 
