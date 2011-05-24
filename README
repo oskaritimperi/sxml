@@ -1,0 +1,11 @@
+sxml
+----
+
+(Stupid XML Generator)
+
+A simple class to generate XML without fuss. Born out of frustration
+of entering XML data directly to C++ strings.
+
+
+Copyright (C) 2011 Oskari Timperi
+
