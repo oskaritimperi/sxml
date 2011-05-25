@@ -25,8 +25,6 @@
 
 #include "sxml.h"
 
-#include <sstream>
-
 namespace sxml {
 
 element::element()
@@ -39,9 +37,8 @@ element::element(const element &elem)
       m_text(elem.m_text)
 {}
 
-element::element(const std::string &name, const std::string &text)
-    : m_name(name),
-      m_text(text)
+element::element(const std::string &name)
+    : m_name(name)
 {}
 
 std::string element::to_string(bool nice, int indent) const
@@ -107,33 +104,17 @@ element &element::add_child(const element &child)
     return *this;
 }
 
-element &element::set_text(const std::string &text)
+template<> element &element::set_text<>(const std::string &text)
 {
     m_text = text;
     return *this;
 }
 
-element &element::set_attr(const std::string &name,
-                       const std::string &value)
+template<> element &element::set_attr<>(const std::string &name,
+    const std::string &value)
 {
     m_attributes[name] = value;
     return *this;
-}
-
-element &element::set_attr(const std::string &name, long value)
-{
-    std::string s;
-    std::stringstream ss(s);
-    ss << value;
-    return set_attr(name, ss.str());
-}
-
-element &element::set_attr(const std::string &name, double value)
-{
-    std::string s;
-    std::stringstream ss(s);
-    ss << value;
-    return set_attr(name, ss.str());
 }
 
 } // namespace sxml

@@ -27,6 +27,7 @@
 #define SXML_H
 
 #include <string>
+#include <sstream>
 #include <map>
 #include <vector>
 
@@ -49,8 +50,7 @@ class element
     element(const element &elem);
     
     //! Construcst an element with the specified name and text.
-    element(const std::string &name,
-            const std::string &text = std::string());
+    element(const std::string &name);
   
     //! Creates a textual representation of the element. If nice
     //! is true, the returned string is formatted with indentations
@@ -63,19 +63,14 @@ class element
     //! Set the text for this element. An element can either have text
     //! or children. If an element has both, children take precedence
     //! when calling to_string().
-    element &set_text(const std::string &text);
-    
+    template<class T>
+    element &set_text(const T &text);
+
     //! Set an attribute for this element with the specified name and
     //! value.
-    element &set_attr(const std::string &name,
-                      const std::string &value);
+    template<class T>
+    element &set_attr(const std::string &name, const T &value);
 
-    //! This is an overloaded function.
-    element &set_attr(const std::string &name, long value);
-    
-    //! This is an overloaded function.
-    element &set_attr(const std::string &name, double value);
-                           
     private:
     
     element_list m_children;
@@ -84,6 +79,30 @@ class element
     std::string m_name;
     std::string m_text;
 };
+
+template<class T> element &element::set_text(const T &text)
+{
+    std::string s;
+    std::stringstream ss(s);
+    ss << text;
+
+    return set_text<std::string>(ss.str());
+}
+
+template<> element &element::set_text<>(const std::string &text);
+
+template<class T>
+element &element::set_attr(const std::string &name, const T &value)
+{
+    std::string s;
+    std::stringstream ss(s);
+    ss << value;
+
+    return set_attr<std::string>(name, ss.str());
+}
+
+template<>
+element &element::set_attr(const std::string &name, const std::string &value);
 
 } // namespace sxml
 
