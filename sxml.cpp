@@ -25,38 +25,62 @@
 
 #include "sxml.h"
 
+using std::string;
+using std::ostringstream;
+
 namespace sxml {
 
-element::element()
+element::element(element *parent)
+    : m_parent(parent),
+      m_modified(true)
 {}
 
 element::element(const element &elem)
-    : m_children(elem.m_children),
+    : m_parent(elem.m_parent),
+      m_children(elem.clone_children()),
       m_attributes(elem.m_attributes),
       m_name(elem.m_name),
-      m_text(elem.m_text)
+      m_text(elem.m_text),
+      m_cached(elem.m_cached),
+      m_modified(elem.m_modified)
 {}
 
-element::element(const std::string &name)
-    : m_name(name)
+element::element(const string &name, element *parent)
+    : m_parent(parent),
+      m_name(name),
+      m_modified(true)
 {}
 
-std::string element::to_string(bool nice, int indent) const
+element::~element()
 {
-    std::string xmlstr;
-    std::ostringstream xml(xmlstr);
-    
+    //cout << __FUNCTION__ << " " << m_name << endl;
+
+    element_list::iterator ei = m_children.begin();
+    for (; ei != m_children.end(); ++ei)
+    {
+        delete (*ei);
+    }
+}
+
+string element::to_string(bool nice, int indent)
+{
+    if (!m_modified)
+        return m_cached;
+
+    string xmlstr;
+    ostringstream xml(xmlstr);
+
     if (nice)
-        xml << std::string(indent, ' ');
-    
+        xml << string(indent, ' ');
+
     xml << "<" << m_name;
-    
-    attribute_map::const_iterator ai = m_attributes.begin();
+
+    attribute_map::iterator ai = m_attributes.begin();
     for (; ai != m_attributes.end(); ++ai)
     {
         xml << " " << ai->first << "=\"" << ai->second << "\"";
     }
-    
+
     if (m_children.empty() && m_text.empty())
     {
         xml << " />";
@@ -76,45 +100,77 @@ std::string element::to_string(bool nice, int indent) const
         element_list::const_iterator ei = m_children.begin();
         for (; ei != m_children.end(); ++ei)
         {
-            xml << ei->to_string(nice, indent + 2);
-            
+            xml << (*ei)->to_string(nice, indent + 2);
+
             if (nice)
                 xml << "\n";
-        } 
+        }
     }
     else if (!m_text.empty())
     {
         if (nice)
-            xml << std::string(indent + 2, ' ');
-        
+            xml << string(indent + 2, ' ');
+
         xml << m_text << (nice ? "\n" : "");
     }
-    
+
     if (nice)
-        xml << std::string(indent, ' ');
-        
+        xml << string(indent, ' ');
+
     xml << "</" << m_name << ">";
-    
+
+    m_cached = xml.str();
+
+    set_modified(false);
+
     return xml.str();
 }
 
-element &element::add_child(const element &child)
+element *element::add_child(element *child)
 {
     m_children.push_back(child);
-    return *this;
+    m_modified = true;
+    return this;
 }
 
-template<> element &element::set_text<>(const std::string &text)
+template<> element *element::set_text<>(const string &text)
 {
     m_text = text;
-    return *this;
+    m_modified = true;
+    return this;
 }
 
-template<> element &element::set_attr<>(const std::string &name,
-    const std::string &value)
+template<> element *element::set_attr<>(const string &name,
+                                        const string &value)
 {
     m_attributes[name] = value;
-    return *this;
+    m_modified = true;
+    return this;
+}
+
+element_list element::clone_children() const
+{
+    element_list clones;
+
+    element_list::const_iterator ei = m_children.begin();
+    for (; ei != m_children.end(); ++ei)
+    {
+        element *clone = new element(*(*ei));
+        clones.push_back(clone);
+    }
+
+    return clones;
+}
+
+void element::set_modified(bool modified)
+{
+    m_modified = modified;
+
+    if (modified)
+    {
+        if (m_parent != NULL)
+            m_parent->set_modified(true);
+    }
 }
 
 } // namespace sxml

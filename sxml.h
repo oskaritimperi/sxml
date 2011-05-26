@@ -35,52 +35,62 @@ namespace sxml {
 
 class element;
 
-typedef std::vector<element> element_list;
+typedef std::vector<element *> element_list;
 typedef std::map<std::string, std::string> attribute_map;
 
 class element
 {
     public:
-    
+
     //! Constructs an empty element (i.e., no name,
-    //! children, attributes).
-    element();
-    
+    //! children, attributes) with the specified parent.
+    explicit element(element *parent = NULL);
+
     //! Copy constructor.
     element(const element &elem);
-    
-    //! Construcst an element with the specified name and text.
-    element(const std::string &name);
-  
+
+    //! Constructs an element with the specified name and parent.
+    explicit element(const std::string &name, element *parent = NULL);
+
+    virtual ~element();
+
     //! Creates a textual representation of the element. If nice
     //! is true, the returned string is formatted with indentations
     //! and newlines.
-    std::string to_string(bool nice = false, int indent = 0) const;
-    
-    //! Adds a child element to this element. 
-    element &add_child(const element &child);
-    
+    std::string to_string(bool nice = false, int indent = 0);
+
+    //! Adds a child element to this element.
+    element *add_child(element *child);
+
     //! Set the text for this element. An element can either have text
     //! or children. If an element has both, children take precedence
     //! when calling to_string().
-    template<class T>
-    element &set_text(const T &text);
+    template<class T> element *set_text(const T &text);
 
     //! Set an attribute for this element with the specified name and
     //! value.
-    template<class T>
-    element &set_attr(const std::string &name, const T &value);
+    template<class T> element *set_attr(const std::string &name,
+                                        const T &value);
 
     private:
-    
+
+    element_list clone_children() const;
+
+    void set_modified(bool modified);
+
+    element *m_parent;
+
     element_list m_children;
     attribute_map m_attributes;
-    
+
     std::string m_name;
     std::string m_text;
+
+    std::string m_cached;
+    bool m_modified;
 };
 
-template<class T> element &element::set_text(const T &text)
+template<class T> element *element::set_text(const T &text)
 {
     std::string s;
     std::stringstream ss(s);
@@ -89,10 +99,10 @@ template<class T> element &element::set_text(const T &text)
     return set_text<std::string>(ss.str());
 }
 
-template<> element &element::set_text<>(const std::string &text);
+template<> element *element::set_text<>(const std::string &text);
 
-template<class T>
-element &element::set_attr(const std::string &name, const T &value)
+template<class T> element *element::set_attr(const std::string &name,
+    const T &value)
 {
     std::string s;
     std::stringstream ss(s);
@@ -101,8 +111,8 @@ element &element::set_attr(const std::string &name, const T &value)
     return set_attr<std::string>(name, ss.str());
 }
 
-template<>
-element &element::set_attr(const std::string &name, const std::string &value);
+template<> element *element::set_attr(const std::string &name,
+    const std::string &value);
 
 } // namespace sxml
 
