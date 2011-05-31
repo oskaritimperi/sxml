@@ -25,15 +25,25 @@
 
 #include "sxml.h"
 
+#include <sstream>
+//#include <iostream>
+
 using std::string;
 using std::ostringstream;
+//using std::cout;
+//using std::endl;
 
 namespace sxml {
 
 element::element(element *parent)
     : m_parent(parent),
       m_modified(true)
-{}
+{
+    if (parent != NULL)
+    {
+        parent->add_child(this);
+    }
+}
 
 element::element(const element &elem)
     : m_parent(elem.m_parent),
@@ -49,7 +59,12 @@ element::element(const string &name, element *parent)
     : m_parent(parent),
       m_name(name),
       m_modified(true)
-{}
+{
+    if (parent != NULL)
+    {
+        parent->add_child(this);
+    }
+}
 
 element::~element()
 {
@@ -128,15 +143,27 @@ string element::to_string(bool nice, int indent)
 
 element *element::add_child(element *child)
 {
+    child->m_parent = this;
     m_children.push_back(child);
-    m_modified = true;
-    return this;
+    set_modified(true);
+    return child;
+}
+
+element *element::add_child(const element &child)
+{
+    element *c = new element(child);
+    return add_child(c);
+}
+
+element *element::add_child(const std::string &tag)
+{
+    return new element(tag, this);
 }
 
 template<> element *element::set_text<>(const string &text)
 {
     m_text = text;
-    m_modified = true;
+    set_modified(true);
     return this;
 }
 
@@ -144,7 +171,7 @@ template<> element *element::set_attr<>(const string &name,
                                         const string &value)
 {
     m_attributes[name] = value;
-    m_modified = true;
+    set_modified(true);
     return this;
 }
 
@@ -155,7 +182,8 @@ element_list element::clone_children() const
     element_list::const_iterator ei = m_children.begin();
     for (; ei != m_children.end(); ++ei)
     {
-        element *clone = new element(*(*ei));
+        element *orig = *ei;
+        element *clone = new element(*orig);
         clones.push_back(clone);
     }
 
@@ -166,10 +194,9 @@ void element::set_modified(bool modified)
 {
     m_modified = modified;
 
-    if (modified)
+    if (modified && m_parent != NULL)
     {
-        if (m_parent != NULL)
-            m_parent->set_modified(true);
+        m_parent->set_modified(true);
     }
 }
 

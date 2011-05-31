@@ -46,11 +46,11 @@ class element
     //! children, attributes) with the specified parent.
     explicit element(element *parent = NULL);
 
-    //! Copy constructor.
-    element(const element &elem);
-
     //! Constructs an element with the specified name and parent.
     explicit element(const std::string &name, element *parent = NULL);
+
+    //! Copy constructor.
+    element(const element &elem);
 
     virtual ~element();
 
@@ -59,16 +59,26 @@ class element
     //! and newlines.
     std::string to_string(bool nice = false, int indent = 0);
 
-    //! Adds a child element to this element.
+    //! Adds a child element to this element. This version doesn't allocate
+    //! memory and takes the ownership of the given element. Returns a
+    //! pointer to the child.
     element *add_child(element *child);
+
+    //! Adds a child element to this element. This version allocates memory
+    //! for a new child. Returns a pointer to the child.
+    element *add_child(const element &child);
+
+    //! Adds a child with the given tag to this element. Returns a pointer
+    //! to the child.
+    element *add_child(const std::string &tag);
 
     //! Set the text for this element. An element can either have text
     //! or children. If an element has both, children take precedence
-    //! when calling to_string().
+    //! when calling to_string(). Returns a pointer to this element.
     template<class T> element *set_text(const T &text);
 
     //! Set an attribute for this element with the specified name and
-    //! value.
+    //! value. Returns a pointer to this element.
     template<class T> element *set_attr(const std::string &name,
                                         const T &value);
 
@@ -102,7 +112,7 @@ template<class T> element *element::set_text(const T &text)
 template<> element *element::set_text<>(const std::string &text);
 
 template<class T> element *element::set_attr(const std::string &name,
-    const T &value)
+                                             const T &value)
 {
     std::string s;
     std::stringstream ss(s);
@@ -112,7 +122,7 @@ template<class T> element *element::set_attr(const std::string &name,
 }
 
 template<> element *element::set_attr(const std::string &name,
-    const std::string &value);
+                                      const std::string &value);
 
 } // namespace sxml
 
