@@ -31,13 +31,19 @@ using sxml::element;
 using sxml::comment;
 int main()
 {
+    // make a new element
     element *root = new element("root");
 
+    // add "node" with attribute "id" to "root" element
     root->add_element("node")->set_attr("id", 0);
 
+    // add a comment after the node
     root->add_comment("yay, a comment");
+
+    // add another node with different id attribute value
     root->add_element("node")->set_attr("id", 1);
 
+    // methods returning pointers comes handy sometimes.
     element *node = root->add_element("node")->set_attr("id", 3.1);
     node = node->add_element("subnode");
     node->add_element("subsubnode")->add_comment(
@@ -46,8 +52,10 @@ int main()
     node = root->add_element("node")->set_attr("id", 6);
     node = node->add_element("subnode")->set_attr("id", 66);
 
+    // this should move the "subnode" from "node" to "root"
     root->add_child(node);
 
+    // print the whole tree to stdout.
     std::cout << root->to_string(true) << std::endl;
 
     return 0;
