@@ -22,27 +22,29 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  */
- 
+
 #include <iostream>
 
 #include "sxml.h"
 
 using sxml::element;
-
+using sxml::comment;
 int main()
 {
-    element root("summary");
+    element *root = new element("root");
 
-    root.add_child(element("foo", "lorem ipsum"))
-    
-        .add_child(element("bar")
-                    .add_child(element("foobar", "bazinga!"))
-                    .set_attr("id", "1337"))
-                        
-        .add_child(element("mother").add_child(element("child")));
+    root->add_element("node")->set_attr("id", 0);
 
-    std::cout << root.to_string(true) << std::endl;
-    
+    root->add_child(new comment("yay, a comment!"));
+    root->add_element("node")->set_attr("id", 1);
+
+    element *node = root->add_element("node")->set_attr("id", 3.1);
+    node = node->add_element("subnode")
+    node->add_element("subsubnode")->add_child(
+        new comment("i am in pretty deep waters here, man .."));
+
+    std::cout << root->to_string(true) << std::endl;
+
     return 0;
 }
 

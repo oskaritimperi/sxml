@@ -33,21 +33,90 @@
 
 namespace sxml {
 
-class element;
+class node;
 
-typedef std::vector<element *> element_list;
-typedef std::map<std::string, std::string> attribute_map;
+typedef std::vector<node *> node_list;
 
-class element
+//! Base class for nodes, e.g. an element, a comment, text, ...
+class node
+{
+    public:
+
+    //! Constructs an empty node. If parent is not NULL, the constructed node
+    //! is added to the given parent as a child.
+    explicit node(node *parent = NULL);
+
+    //! Copy constructor.
+    node(const node &n);
+
+    //! Destructor. Frees the children of this node.
+    virtual ~node();
+
+    //! Adds a child node to this node. Takes the ownership of the given
+    //! node. Returns a pointer to the child.
+    node *add_child(node *child);
+
+    //! Returns a string representation of this node. Derived classes should
+    //! implement this.
+    virtual std::string to_string(bool nice , int indent = 0) const;
+
+    protected:
+
+    //! Returns a list of children in this node.
+    const node_list &children() const;
+
+    //! Clones this node. The cloned node has clones of all the children of
+    //! the original. The cloned node doesn't have a parent.
+    virtual node *clone();
+
+    //! Clone the children of this node. The children do not have a parent set.
+    node_list clone_children() const;
+
+    //! Is this node modified? Derived classes can use this information for
+    //! caching.
+    bool modified() const;
+
+    //! Set the modified status of this node. If modified is true and the node
+    //! has a parent, set_modified() also calls the parents set_modified().
+    void set_modified(bool modified) const;
+
+    private:
+
+    //! Pointer to the parent node.
+    node *m_parent;
+
+    //! List of the children.
+    node_list m_children;
+
+    //! Is this node modified.
+    mutable bool m_modified;
+};
+
+//! A node used for comments.
+class comment: public node
+{
+    public:
+
+    explicit comment(node *parent = NULL);
+    explicit comment(const std::string &text, node *parent = NULL);
+
+    virtual std::string to_string(bool nice = false, int indent = 0) const;
+
+    private:
+
+    std::string m_text;
+};
+
+class element: public node
 {
     public:
 
     //! Constructs an empty element (i.e., no name,
     //! children, attributes) with the specified parent.
-    explicit element(element *parent = NULL);
+    explicit element(node *parent = NULL);
 
     //! Constructs an element with the specified name and parent.
-    explicit element(const std::string &name, element *parent = NULL);
+    explicit element(const std::string &name, node *parent = NULL);
 
     //! Copy constructor.
     element(const element &elem);
@@ -57,20 +126,11 @@ class element
     //! Creates a textual representation of the element. If nice
     //! is true, the returned string is formatted with indentations
     //! and newlines.
-    std::string to_string(bool nice = false, int indent = 0);
-
-    //! Adds a child element to this element. This version doesn't allocate
-    //! memory and takes the ownership of the given element. Returns a
-    //! pointer to the child.
-    element *add_child(element *child);
-
-    //! Adds a child element to this element. This version allocates memory
-    //! for a new child. Returns a pointer to the child.
-    element *add_child(const element &child);
+    virtual std::string to_string(bool nice = false, int indent = 0) const;
 
     //! Adds a child with the given tag to this element. Returns a pointer
     //! to the child.
-    element *add_child(const std::string &tag);
+    element *add_element(const std::string &tag);
 
     //! Set the text for this element. An element can either have text
     //! or children. If an element has both, children take precedence
@@ -84,20 +144,14 @@ class element
 
     private:
 
-    element_list clone_children() const;
+    typedef std::map<std::string, std::string> attribute_map;
 
-    void set_modified(bool modified);
-
-    element *m_parent;
-
-    element_list m_children;
     attribute_map m_attributes;
 
     std::string m_name;
     std::string m_text;
 
-    std::string m_cached;
-    bool m_modified;
+    mutable std::string m_cached;
 };
 
 template<class T> element *element::set_text(const T &text)

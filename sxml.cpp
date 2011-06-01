@@ -26,16 +26,13 @@
 #include "sxml.h"
 
 #include <sstream>
-//#include <iostream>
 
 using std::string;
 using std::ostringstream;
-//using std::cout;
-//using std::endl;
 
 namespace sxml {
 
-element::element(element *parent)
+node::node(node *parent)
     : m_parent(parent),
       m_modified(true)
 {
@@ -45,41 +42,127 @@ element::element(element *parent)
     }
 }
 
+node::node(const node &n)
+    : m_parent(NULL),
+      m_children(n.m_children),
+      m_modified(n.m_modified)
+{}
+
+node::~node()
+{
+    node_list::iterator i = m_children.begin();
+    for (; i != m_children.end(); ++i)
+    {
+        delete (*i);
+    }
+}
+
+node *node::add_child(node *child)
+{
+    child->m_parent = this;
+    m_children.push_back(child);
+    set_modified(true);
+    return child;
+}
+
+string node::to_string(bool nice , int indent) const
+{
+    nice = nice;
+    indent = indent;
+    return string();
+}
+
+const node_list &node::children() const
+{
+    return m_children;
+}
+
+node *node::clone()
+{
+    node *n = new node;
+    n->m_children = clone_children();
+    n->m_modified = m_modified;
+    return n;
+}
+
+node_list node::clone_children() const
+{
+    node_list clones;
+
+    node_list::const_iterator i = m_children.begin();
+    for (; i != m_children.end(); ++i)
+    {
+        clones.push_back((*i)->clone());
+    }
+
+    return clones;
+}
+
+bool node::modified() const
+{
+    return m_modified;
+}
+
+void node::set_modified(bool modified) const
+{
+    m_modified = modified;
+
+    if (modified && m_parent != NULL)
+    {
+        m_parent->set_modified(true);
+    }
+}
+
+// *******************************************************************
+
+comment::comment(node *parent)
+    : node(parent)
+{}
+
+comment::comment(const string &text, node *parent)
+    : node(parent)
+{
+    m_text = text;
+}
+
+string comment::to_string(bool nice, int indent) const
+{
+    string result;
+
+    if (nice)
+        result = string(indent, ' ');
+
+    result += string("<!-- ") + m_text + string(" -->");
+
+    return result;
+}
+
+// *******************************************************************
+
+element::element(node *parent)
+    : node(parent)
+{}
+
 element::element(const element &elem)
-    : m_parent(elem.m_parent),
-      m_children(elem.clone_children()),
+    : node(elem),
       m_attributes(elem.m_attributes),
       m_name(elem.m_name),
       m_text(elem.m_text),
-      m_cached(elem.m_cached),
-      m_modified(elem.m_modified)
+      m_cached(elem.m_cached)
 {}
 
-element::element(const string &name, element *parent)
-    : m_parent(parent),
-      m_name(name),
-      m_modified(true)
-{
-    if (parent != NULL)
-    {
-        parent->add_child(this);
-    }
-}
+element::element(const string &name, node *parent)
+    : node(parent),
+      m_name(name)
+{}
 
 element::~element()
 {
-    //cout << __FUNCTION__ << " " << m_name << endl;
-
-    element_list::iterator ei = m_children.begin();
-    for (; ei != m_children.end(); ++ei)
-    {
-        delete (*ei);
-    }
 }
 
-string element::to_string(bool nice, int indent)
+string element::to_string(bool nice, int indent) const
 {
-    if (!m_modified)
+    if (!modified())
         return m_cached;
 
     string xmlstr;
@@ -90,32 +173,28 @@ string element::to_string(bool nice, int indent)
 
     xml << "<" << m_name;
 
-    attribute_map::iterator ai = m_attributes.begin();
+    attribute_map::const_iterator ai = m_attributes.begin();
     for (; ai != m_attributes.end(); ++ai)
     {
         xml << " " << ai->first << "=\"" << ai->second << "\"";
     }
 
-    if (m_children.empty() && m_text.empty())
+    if (children().empty() && m_text.empty())
     {
         xml << " />";
         return xml.str();
     }
-    else if (nice)
-    {
-        xml << ">\n";
-    }
     else
     {
-        xml << ">";
+        xml << (nice ? ">\n" : ">");
     }
 
-    if (!m_children.empty())
+    if (!children().empty())
     {
-        element_list::const_iterator ei = m_children.begin();
-        for (; ei != m_children.end(); ++ei)
+        node_list::const_iterator ni = children().begin();
+        for (; ni != children().end(); ++ni)
         {
-            xml << (*ei)->to_string(nice, indent + 2);
+            xml << (*ni)->to_string(nice, indent + 2);
 
             if (nice)
                 xml << "\n";
@@ -141,21 +220,7 @@ string element::to_string(bool nice, int indent)
     return xml.str();
 }
 
-element *element::add_child(element *child)
-{
-    child->m_parent = this;
-    m_children.push_back(child);
-    set_modified(true);
-    return child;
-}
-
-element *element::add_child(const element &child)
-{
-    element *c = new element(child);
-    return add_child(c);
-}
-
-element *element::add_child(const std::string &tag)
+element *element::add_element(const std::string &tag)
 {
     return new element(tag, this);
 }
@@ -173,31 +238,6 @@ template<> element *element::set_attr<>(const string &name,
     m_attributes[name] = value;
     set_modified(true);
     return this;
-}
-
-element_list element::clone_children() const
-{
-    element_list clones;
-
-    element_list::const_iterator ei = m_children.begin();
-    for (; ei != m_children.end(); ++ei)
-    {
-        element *orig = *ei;
-        element *clone = new element(*orig);
-        clones.push_back(clone);
-    }
-
-    return clones;
-}
-
-void element::set_modified(bool modified)
-{
-    m_modified = modified;
-
-    if (modified && m_parent != NULL)
-    {
-        m_parent->set_modified(true);
-    }
 }
 
 } // namespace sxml
