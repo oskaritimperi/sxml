@@ -35,13 +35,13 @@ int main()
 
     root->add_element("node")->set_attr("id", 0);
 
-    root->add_child(new comment("yay, a comment!"));
+    root->add_comment("yay, a comment");
     root->add_element("node")->set_attr("id", 1);
 
     element *node = root->add_element("node")->set_attr("id", 3.1);
-    node = node->add_element("subnode")
-    node->add_element("subsubnode")->add_child(
-        new comment("i am in pretty deep waters here, man .."));
+    node = node->add_element("subnode");
+    node->add_element("subsubnode")->add_comment(
+        "i am in pretty deep waters here, man ..");
 
     std::cout << root->to_string(true) << std::endl;
 

@@ -65,6 +65,16 @@ node *node::add_child(node *child)
     return child;
 }
 
+element *node::add_element(const std::string &tag)
+{
+    return new element(tag, this);
+}
+
+comment *node::add_comment(const std::string &text)
+{
+    return new comment(text, this);
+}
+
 string node::to_string(bool nice , int indent) const
 {
     nice = nice;
@@ -218,11 +228,6 @@ string element::to_string(bool nice, int indent) const
     set_modified(false);
 
     return xml.str();
-}
-
-element *element::add_element(const std::string &tag)
-{
-    return new element(tag, this);
 }
 
 template<> element *element::set_text<>(const string &text)

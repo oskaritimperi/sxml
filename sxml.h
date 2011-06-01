@@ -34,6 +34,8 @@
 namespace sxml {
 
 class node;
+class element;
+class comment;
 
 typedef std::vector<node *> node_list;
 
@@ -52,13 +54,20 @@ class node
     //! Destructor. Frees the children of this node.
     virtual ~node();
 
+    //! Returns a string representation of this node. Derived classes should
+    //! implement this.
+    virtual std::string to_string(bool nice , int indent = 0) const;
+
     //! Adds a child node to this node. Takes the ownership of the given
     //! node. Returns a pointer to the child.
     node *add_child(node *child);
 
-    //! Returns a string representation of this node. Derived classes should
-    //! implement this.
-    virtual std::string to_string(bool nice , int indent = 0) const;
+    //! Adds an element with the given tag to this node. Returns a pointer to
+    //! the element node.
+    element *add_element(const std::string &tag);
+
+    //! Adds a comment to this node. Returns a pointer to the comment node.
+    comment *add_comment(const std::string &text);
 
     protected:
 
@@ -127,10 +136,6 @@ class element: public node
     //! is true, the returned string is formatted with indentations
     //! and newlines.
     virtual std::string to_string(bool nice = false, int indent = 0) const;
-
-    //! Adds a child with the given tag to this element. Returns a pointer
-    //! to the child.
-    element *add_element(const std::string &tag);
 
     //! Set the text for this element. An element can either have text
     //! or children. If an element has both, children take precedence
