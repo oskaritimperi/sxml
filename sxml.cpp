@@ -59,6 +59,20 @@ node::~node()
 
 node *node::add_child(node *child)
 {
+    if (child->m_parent != NULL)
+    {
+        node_list::iterator i = child->m_parent->m_children.begin();
+        for (; i != child->m_parent->m_children.end(); ++i)
+        {
+            if (*i == child)
+            {
+                child->m_parent->m_children.erase(i);
+                child->m_parent->set_modified(true);
+                break;
+            }
+        }
+    }
+
     child->m_parent = this;
     m_children.push_back(child);
     set_modified(true);

@@ -43,6 +43,11 @@ int main()
     node->add_element("subsubnode")->add_comment(
         "i am in pretty deep waters here, man ..");
 
+    node = root->add_element("node")->set_attr("id", 6);
+    node = node->add_element("subnode")->set_attr("id", 66);
+
+    root->add_child(node);
+
     std::cout << root->to_string(true) << std::endl;
 
     return 0;
